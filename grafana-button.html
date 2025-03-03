@@ -1,0 +1,167 @@
+<div id="GF_EXPORT_marker">
+    <!-- PDF Export Button for Grafana -->
+</div>
+
+<script>
+    const pdfGeneration = true;
+    const pdfGenerationServerUrl = 'http://localhost:3001/';
+    const grafanaHost = 'host.docker.internal'; // Docker host for Mac/Windows, use your host IP for Linux
+
+    if (pdfGeneration && pdfGenerationServerUrl) {
+        document.onclick = function () {
+            if (!document.getElementById('GF_EXPORT_marker')) return;
+
+            let shareModalContent = document.querySelector('div[class*="shareModalContainer"]:has(a[aria-label="Tab Link"]), div[role="dialog"]:has(button[data-testid*="Tab Link"])');
+            let linkUrlInput = document.querySelector('#link-url-input');
+
+            if (shareModalContent && linkUrlInput) {
+                if (!shareModalContent.querySelector('.GF_EXPORT_export-pdf-container')) {
+                    let div = document.createElement('div');
+                    div.classList.add('GF_EXPORT_export-pdf-container');
+
+                    // Create export button
+                    let button = document.createElement('button');
+                    button.setAttribute('disabled', true);
+                    button.classList.add('GF_EXPORT_btn-export-pdf');
+                    button.innerHTML = `
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        <div class="GF_EXPORT_loader"></div>
+                        <span>PDF Export</span>
+                    `;
+
+                    button.onclick = async function () {
+                        button.classList.add('GF_EXPORT_waiting');
+                        button.setAttribute('disabled', true);
+
+                        let url = linkUrlInput.value || window.location.href;
+                        const urlObj = new URL(url);
+
+                        // Replace localhost/127.0.0.1 with Docker host
+                        if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+                            urlObj.hostname = grafanaHost;
+                        }
+
+                        // Add optimization parameters
+                        urlObj.searchParams.set('kiosk', 'tv');
+                        urlObj.searchParams.set('hideControls', 'true');
+                        
+                        try {
+                            const response = await fetch(pdfGenerationServerUrl + "generate-pdf", {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    url: urlObj.toString(),
+                                    pdfOptions: {
+                                        format: 'A3',
+                                        landscape: true,
+                                        printBackground: true,
+                                        margin: { top: '0', right: '0', bottom: '0', left: '0' }
+                                    },
+                                    highQuality: true,
+                                    singlePage: true
+                                })
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                window.open(data.pdfUrl, '_blank');
+                            } else {
+                                const errorText = await response.text();
+                                console.error('PDF generation failed:', errorText);
+                                alert('PDF oluşturulurken hata oluştu. Lütfen tekrar deneyin.');
+                            }
+                        } catch (error) {
+                            console.error('Export error:', error);
+                            alert('PDF sunucusuna bağlanılamıyor. Sunucunun çalıştığından emin olun.');
+                        } finally {
+                            button.classList.remove('GF_EXPORT_waiting');
+                            button.removeAttribute('disabled');
+                        }
+                    };
+
+                    // Add status message container
+                    let statusDiv = document.createElement('div');
+                    statusDiv.classList.add('GF_EXPORT_status');
+                    statusDiv.style.display = 'none';
+
+                    div.appendChild(button);
+                    div.appendChild(statusDiv);
+                    shareModalContent.appendChild(div);
+
+                    // Check server status
+                    fetch(pdfGenerationServerUrl + "check-status")
+                        .then(response => {
+                            if (response.ok) {
+                                button.removeAttribute('disabled');
+                            } else {
+                                throw new Error('Server not responding');
+                            }
+                        })
+                        .catch(() => {
+                            statusDiv.textContent = 'PDF sunucusuna bağlanılamıyor';
+                            statusDiv.style.display = 'block';
+                        });
+                }
+            }
+        };
+    }
+</script>
+
+<style>
+    .GF_EXPORT_export-pdf-container {
+        padding: 8px 16px;
+    }
+
+    .GF_EXPORT_btn-export-pdf {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: #3871DC;
+        color: white;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+
+    .GF_EXPORT_btn-export-pdf:hover {
+        background: #1F5BB6;
+    }
+
+    .GF_EXPORT_btn-export-pdf[disabled] {
+        background: #4a4a4a;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    .GF_EXPORT_loader {
+        display: none;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+    }
+
+    .GF_EXPORT_waiting .GF_EXPORT_loader {
+        display: inline-block;
+    }
+
+    .GF_EXPORT_status {
+        margin-top: 8px;
+        padding: 8px;
+        background: #862020;
+        color: white;
+        border-radius: 2px;
+        font-size: 12px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>

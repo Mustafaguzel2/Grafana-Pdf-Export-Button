@@ -1,0 +1,98 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# PDF Output files
+output/*.pdf
+!output/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Debug files
+debug/
+*.log
+logs/
+npm-debug.log*
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IDE - JetBrains
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# IDE - Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# PM2
+.pm2/
+pm2.config.js
+ecosystem.config.js
+
+# Puppeteer
+.cache/
+screenshots/
+*.png
+*.jpg
+*.jpeg
+!illustrations/*.png
+!illustrations/*.jpg
+!illustrations/*.jpeg
+
+# Build files
+dist/
+build/
+*.tgz
+
+# Misc
+.cache/
+.temp/
+*.bak
+*.backup
+*~
+.directory
