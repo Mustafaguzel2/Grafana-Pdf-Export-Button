@@ -141,6 +141,149 @@ The system provides detailed logging for both PDF generation and cleanup process
 - System resource usage
 - Error tracking and reporting
 
+## 🌐 Deployment & Customization
+
+### Server Configuration
+
+You can deploy this tool on different servers with custom configurations. Here's how to set it up:
+
+1. **Environment Setup**:
+   Create a `.env` file in your project root:
+   ```bash
+   # Server Configuration
+   SERVER_PORT=3000                  # Port for the service
+   SERVER_HOST=0.0.0.0              # Host address (0.0.0.0 for all interfaces)
+   
+   # PDF Export Configuration
+   PDF_OUTPUT_DIR=/path/to/output   # Custom output directory
+   PDF_WIDTH_PX=2400                # PDF width in pixels
+   DEVICE_SCALE_FACTOR=2.0          # Screen scale factor
+   
+   # Timeouts
+   RENDER_TIMEOUT=30000             # Rendering timeout (ms)
+   NAVIGATION_TIMEOUT=120000        # Page navigation timeout (ms)
+   
+   # Cleanup Configuration
+   CLEANUP_SCHEDULE="0 0 * * *"     # Cron schedule for cleanup
+   MAX_AGE_HOURS=72                 # File retention period
+   ```
+
+2. **Custom Output Directory**:
+   You can specify a custom output directory in three ways:
+   
+   a. Using environment variable:
+   ```bash
+   export PDF_OUTPUT_DIR=/custom/path/to/output
+   ```
+   
+   b. In your `.env` file:
+   ```bash
+   PDF_OUTPUT_DIR=/custom/path/to/output
+   ```
+   
+   c. Modifying `cleanup.js`:
+   ```javascript
+   const OUTPUT_DIR = process.env.PDF_OUTPUT_DIR || '/custom/path/to/output';
+   ```
+
+3. **Directory Permissions**:
+   ```bash
+   # Create output directory if it doesn't exist
+   mkdir -p /custom/path/to/output
+   
+   # Set proper permissions
+   chmod 755 /custom/path/to/output
+   
+   # If running as different user
+   chown -R user:group /custom/path/to/output
+   ```
+
+### Multi-Server Setup
+
+For running the service on multiple servers:
+
+1. **Different Output Directories**:
+   ```bash
+   # Server 1
+   PDF_OUTPUT_DIR=/mnt/server1/pdf_output
+   
+   # Server 2
+   PDF_OUTPUT_DIR=/mnt/server2/pdf_output
+   ```
+
+2. **Shared Storage Option**:
+   You can use a shared network storage:
+   ```bash
+   # Mount shared storage
+   mount -t nfs nfs-server:/shared/pdf_output /mnt/pdf_output
+   
+   # Update environment
+   PDF_OUTPUT_DIR=/mnt/pdf_output
+   ```
+
+3. **Load Balancer Configuration**:
+   If using multiple servers behind a load balancer:
+   ```nginx
+   # Example Nginx configuration
+   upstream pdf_export {
+       server server1:3000;
+       server server2:3000;
+   }
+   
+   server {
+       listen 80;
+       server_name pdf-export.yourdomain.com;
+       
+       location / {
+           proxy_pass http://pdf_export;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+       }
+   }
+   ```
+
+### Monitoring Multiple Instances
+
+For monitoring multiple instances:
+
+1. **PM2 Monitoring**:
+   ```bash
+   # Start service with unique names
+   pm2 start cleanup-cron.js --name "pdf-cleanup-server1"
+   pm2 start cleanup-cron.js --name "pdf-cleanup-server2"
+   
+   # Monitor all instances
+   pm2 monitor
+   ```
+
+2. **Log Management**:
+   ```bash
+   # Configure separate log directories
+   SERVER1_LOG_DIR=/var/log/pdf-export/server1
+   SERVER2_LOG_DIR=/var/log/pdf-export/server2
+   ```
+
+### Health Checks
+
+Add health check endpoints to monitor service status:
+
+```bash
+curl http://your-server:3000/health
+```
+
+Response example:
+```json
+{
+    "status": "healthy",
+    "outputDir": "/custom/path/to/output",
+    "diskSpace": {
+        "free": "50GB",
+        "total": "100GB"
+    },
+    "lastCleanup": "2024-03-20T00:00:00Z"
+}
+```
+
 ## 🤝 Contributing
 
 Feel free to submit issues and enhancement requests!
